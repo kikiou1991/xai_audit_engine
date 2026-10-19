@@ -1,0 +1,11 @@
+# CMake build outputs
+cmake-build-*/
+build/
+bin/
+
+# CLion project settings
+.idea/
+cmake-build-debug/
+
+# macOS hidden system files
+.DS_Store
