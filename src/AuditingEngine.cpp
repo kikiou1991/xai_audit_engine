@@ -1,6 +1,9 @@
 #include "AuditingEngine.hpp"
 #include <numeric>
 #include <stdexcept>
+#include <random>
+#include <algorithm>
+
 
 AuditResult AuditingEngine::audit_sequential_decay(
     const IExplainableModel& model,
@@ -51,4 +54,41 @@ AuditResult AuditingEngine::audit_sequential_decay(
     result.aopc = (num_steps > 0) ? (cumulative_drop / static_cast<double>(num_steps)) : 0.0;
 
     return result;
+}
+
+AuditResult AuditingEngine::audit_random_baseline(
+    const IExplainableModel& model,
+    const double *patient_profile,
+    const double* baseline_reference,
+    std::size_t num_features,
+    std::size_t num_steps,
+    std::size_t num_runs,
+    unsigned int seed)
+
+{
+    if (patient_profile == nullptr || baseline_reference == nullptr) {
+        throw std::invalid_argument("Input pointers cannot be null.");
+    }
+    if (num_steps > num_features) {
+        throw std::out_of_range("Number of steps exceeds total feature dimensions.");
+    }
+    if (num_runs == 0) {
+        throw std::invalid_argument("num_runs must be at least 1");
+    }
+
+    // 1. Create the "hat": a vector containing[0,1,2...,num_feautres -1]
+    std::vector<std::size_t> indicies(num_features);
+    std:iota(indicies.begin(), indicies.end(), 0);
+
+    // 2. The Container where we collect our running results
+    AuditResult aggregated_result;
+    aggregated_result.original_score = model.predict(patient_profile, num_features);
+    aggregated_result.step_scores.assign(num_steps, 0.0);
+    aggregated_result.step_drops.assign(num_steps, 0.0);
+    aggregated_result.aopc = 0.0;
+
+    // 3. Initilise the sudo-num generator
+    std::mt19937 rng(seed);
+
+    return aggregated_result;
 }
