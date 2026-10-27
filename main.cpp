@@ -32,23 +32,27 @@ int main() {
         patient.size(),
         ranked_genes
     );
+    // 2. Audit Random Baseline (100 Monte Carlo runs)
+    AuditResult random_result = AuditingEngine::audit_random_baseline(
+        model,
+        patient.data(),
+        baseline.data(),
+        patient.size(),
+        ranked_genes.size(), // audit the same number of steps as SHAP
+        100 // 100 random runs
+    );
 
-    // 6. Print the formatted auditing report
-    std::cout << std::fixed << std::setprecision(4);
-    std::cout << "Original Patient Cancer Probability: " << result.original_score << "\n";
-    std::cout << "--------------------------------------------------------\n";
-    std::cout << "Step | Masked Gene | Decayed Score | Drop (Comprehensiveness)\n";
-    std::cout << "--------------------------------------------------------\n";
+    std::cout << "\n--- Auditing Results ---\n";
+    std::cout << "AOPC (SHAP Explainer): " << result.aopc << "\n";
+    std::cout << "AOPC (Random Baseline):  " << random_result.aopc << "\n";
 
-    for (std::size_t i = 0; i < ranked_genes.size(); ++i) {
-        std::cout << std::setw(4) << (i + 1) << " | "
-                  << "Gene " << std::setw(6) << ranked_genes[i] << " | "
-                  << std::setw(13) << result.step_scores[i] << " | "
-                  << std::setw(10) << result.step_drops[i] << "\n";
+    double delta_aopc = result.aopc - random_result.aopc;
+    std::cout << "Delta AOPC (Fidelity Gain): " << delta_aopc << "\n";
+
+    if (delta_aopc > 0.0) {
+        std::cout << "Result: [PASS] SHAP is statistically superior to random chance.\n";
+    } else {
+        std::cout << "Result: [FAIL] Explainer is no better than random noise.\n";
     }
-
-    std::cout << "--------------------------------------------------------\n";
-    std::cout << "Final AOPC (Area Over Perturbation Curve): " << result.aopc << "\n";
-
     return 0;
 }

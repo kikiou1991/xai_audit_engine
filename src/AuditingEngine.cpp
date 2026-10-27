@@ -77,8 +77,8 @@ AuditResult AuditingEngine::audit_random_baseline(
     }
 
     // 1. Create the "hat": a vector containing[0,1,2...,num_feautres -1]
-    std::vector<std::size_t> indicies(num_features);
-    std:iota(indicies.begin(), indicies.end(), 0);
+    std::vector<std::size_t> indices(num_features);
+    std:iota(indices.begin(), indices.end(), 0);
 
     // 2. The Container where we collect our running results
     AuditResult aggregated_result;
@@ -89,6 +89,51 @@ AuditResult AuditingEngine::audit_random_baseline(
 
     // 3. Initilise the sudo-num generator
     std::mt19937 rng(seed);
+
+
+    // 4. Monte Carlo runs
+    for (std::size_t run = 0; run < num_runs; ++run) {
+
+        // Your partial Fisher-Yates swap:
+        // We only swap 'num_steps' items directly inside 'indices'
+        for (std::size_t i = 0; i < num_steps; ++i) {
+            std::uniform_int_distribution<std::size_t> dist(i, num_features - 1);
+            std::size_t j = dist(rng);
+            std::swap(indices[i], indices[j]);
+        }
+
+        // Now indices[0 ... num_steps - 1] hold our random draw!
+
+        // 1. Slice out our random draw of size num_steps
+        std::vector<std::size_t> random_order(indices.begin(), indices.begin() + num_steps);
+
+        // 2. Run the audit on this random order
+        AuditResult single_run = audit_sequential_decay(
+            model,
+            patient_profile,
+            baseline_reference,
+            num_features,
+            random_order
+        );
+        // 3. Accumulate scores across steps
+        for (std::size_t s = 0; s < num_steps; ++s) {
+            aggregated_result.step_scores[s] += single_run.step_scores[s];
+            aggregated_result.step_drops[s]  += single_run.step_drops[s];
+        }
+        aggregated_result.aopc += single_run.aopc;
+
+
+    }
+    // 5. Divide accumulated sums by num_runs to compute the arithmetic mean
+    const double inv_runs = 1.0 / static_cast<double>(num_runs);
+
+    for (std::size_t s = 0; s < num_steps; ++s) {
+        aggregated_result.step_scores[s] *= inv_runs;
+        aggregated_result.step_drops[s]  *= inv_runs;
+    }
+    aggregated_result.aopc *= inv_runs;
+
+
 
     return aggregated_result;
 }
