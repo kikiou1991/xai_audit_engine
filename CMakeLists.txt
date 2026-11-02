@@ -17,4 +17,6 @@ add_executable(xai_audit_engine
         src/LogisticRegressionModel.cpp
         src/AuditingEngine.cpp
         main.cpp
+        src/DataLoader.cpp
+        include/DataLoader.hpp
 )
