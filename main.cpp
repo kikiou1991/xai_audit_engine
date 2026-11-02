@@ -3,6 +3,7 @@
 #include <iomanip>
 #include "LogisticRegressionModel.hpp"
 #include "AuditingEngine.hpp"
+#include "include/AuditingEngine.hpp"
 
 int main() {
     std::cout << "=== XAI Transcriptomics Auditing Engine ===\n\n";
@@ -32,17 +33,19 @@ int main() {
         patient.size(),
         ranked_genes
     );
-    // 2. Audit Random Baseline (100 Monte Carlo runs)
+    // 2. Audit Random Baseline (Now using compile time defaults or explicit config)
     AuditResult random_result = AuditingEngine::audit_random_baseline(
         model,
         patient.data(),
         baseline.data(),
         patient.size(),
         ranked_genes.size(), // audit the same number of steps as SHAP
-        100 // 100 random runs
+        AuditConfig::DEFAULT_MONTE_CARLO_RUNS,
+        AuditConfig::DEFAULT_SEED
     );
 
     std::cout << "\n--- Auditing Results ---\n";
+    std::cout << "Original Result: " << result.original_score << "\n";
     std::cout << "AOPC (SHAP Explainer): " << result.aopc << "\n";
     std::cout << "AOPC (Random Baseline):  " << random_result.aopc << "\n";
 

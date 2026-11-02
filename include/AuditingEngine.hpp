@@ -5,6 +5,13 @@
 #include <vector>
 #include <cstddef>
 
+namespace AuditConfig {
+    // Compile-time defaults: embedded directly in the binary instructions
+    constexpr std::size_t DEFAULT_MONTE_CARLO_RUNS = 100;
+    constexpr unsigned int DEFAULT_SEED = 42;
+}
+
+
 struct AuditResult {
     double original_score;
     std::vector<double> step_scores;     // Prediction after each masked gene
@@ -31,8 +38,8 @@ public:
         const double* baseline_reference,
         std::size_t num_features,
         std::size_t num_steps,
-        std::size_t num_runs = 100,
-        unsigned int seed = 42
+        std::size_t num_runs = AuditConfig::DEFAULT_MONTE_CARLO_RUNS,
+        unsigned int seed = AuditConfig::DEFAULT_SEED
     );
 };
 
