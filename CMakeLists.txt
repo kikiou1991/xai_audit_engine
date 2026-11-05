@@ -19,4 +19,6 @@ add_executable(xai_audit_engine
         main.cpp
         src/DataLoader.cpp
         include/DataLoader.hpp
+        include/config.hpp
+        include/ResultLogger.hpp
 )
